@@ -1,22 +1,14 @@
 一、启动软件
 
-1.首先检查文件夹内文件，分别为main.py, denoised.py, env.txt
+1. 将nir_tools.zip压缩包解压
 
-[![hHdvGt.png](https://z3.ax1x.com/2021/09/08/hHdvGt.png)](https://imgtu.com/i/hHdvGt)
+   可选择使用bandzip,winrar等解压软件
 
+   [![hOP08x.png](https://z3.ax1x.com/2021/09/09/hOP08x.png)](https://imgtu.com/i/hOP08x)
 
-2.打开文件夹，在上方路径栏内输入cmd，回车
+2. 进入nir_tools文件夹,双击nir_tools.exe打开软件
 
-[![hHwfeg.png](https://z3.ax1x.com/2021/09/08/hHwfeg.png)](https://imgtu.com/i/hHwfeg)
-
-
-3.在黑框内输入pip install -r env.txt（注意空格）
-
-[![hHwoYn.png](https://z3.ax1x.com/2021/09/08/hHwoYn.png)](https://imgtu.com/i/hHwoYn)
-
-4.等待安装完成后，输入python main.py启动软件
-
-[![hHwvTJ.png](https://z3.ax1x.com/2021/09/08/hHwvTJ.png)](https://imgtu.com/i/hHwvTJ)
+   [![hOCIHJ.png](https://z3.ax1x.com/2021/09/09/hOCIHJ.png)](https://imgtu.com/i/hOCIHJ)
 
 二、软件各部分说明
 
@@ -45,7 +37,6 @@
 
 织法：针织或梭织，W是针织，K是梭织，不确定是U。
 
-
 三、使用软件
 1.打开软件填好采集数据临时地址和采样数据存放地址后，点击开始检测，之后进行数据采集，此时开始检测会变成红色，再次点击可以停止检测
 
@@ -61,3 +52,19 @@
 3.采集完成后，请采集人员完善程序下方所有信息，并点击本匹布样采集完成，将符合要求的采集数据转移至最终存放地址，注意，下方左侧数据，整个采集过程仅需填写一次，如果更换采集人员或者关闭重开软件后须重新填写，右侧布匹编号和成分以及织法，每匹布样采集完成都需要根据当前采集布匹的信息进行更新，注意需要在点击本匹布样采集完成按钮前进行更新
 
 [![hH0Kpt.png](https://z3.ax1x.com/2021/09/08/hH0Kpt.png)](https://imgtu.com/i/hH0Kpt)
+
+
+
+四、从源码编译(可选)
+
+1. 配置环境
+
+   `pip install virtualenv; virtualenv py37; .\py37\Scripts\activate;pip install -r env.txt `
+
+2. 运行软件
+
+   `python main.py`
+
+3. 打包二进制文件
+
+   `pyinstaller  main.py -D -i nir_tools.ico -n nir_tools  -w -y --clean`

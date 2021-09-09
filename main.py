@@ -11,10 +11,12 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from denoise import denoise
 
+
 class Main(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.setWindowTitle(f"布眼科技智能AI实时监测系统")
+        self.setWindowIcon(QIcon("nir_tools.ico"))
         self.widget = QWidget(self)
         self.layout = QVBoxLayout(self.widget)
 
@@ -104,12 +106,12 @@ class Main(QMainWindow):
         self.detect_thread = DetectTheard("undefined path")
 
     def Test(self):
-        #if running, terminate background task
+        # if running, terminate background task
         if self.detect_thread.isRunning():
             self.DestroyDetectThread()
             return
 
-        #if not running, start background task
+        # if not running, start background task
         self.tmp_path = self.input_temp_addr.text()
         if not os.path.exists(self.tmp_path):
             reply = QMessageBox.warning(self,
@@ -127,11 +129,10 @@ class Main(QMainWindow):
         self.detect_thread.terminate()
         self.btn_start_detect.setStyleSheet("QpushButton{background:white}")
 
-
-    def ShowProc(self,title):
+    def ShowProc(self, title):
         self.setWindowTitle(title)
 
-    def Alert(self,notValidFile):
+    def Alert(self, notValidFile):
         reply = QMessageBox.warning(self,
                                     "消息框标题",
                                     f"{notValidFile}采样点出错，是否删除并重新检测？",
@@ -141,7 +142,6 @@ class Main(QMainWindow):
         if reply == QMessageBox.Yes:
             self.detect_thread.delete()
         self.DestroyDetectThread()
-
 
     def Move(self):
         rootPath = self.input_relocate_dir.text()
@@ -199,7 +199,8 @@ class Main(QMainWindow):
                                         f"布匹编号不存在！",
                                         )
             return
-        move(self.tmp_path,rootPath, device_id, name, date, location, fabric, waving_type)
+        move(self.tmp_path, rootPath, device_id, name,
+             date, location, fabric, waving_type)
 
     def closeEvent(self, event):
 
@@ -211,19 +212,21 @@ class Main(QMainWindow):
         else:
             event.ignore()
 
+
 class DetectTheard(QThread):
     """该线程用于计算耗时的累加操作"""
     chan = pyqtSignal(str)  # 信号类型 str
-    proc= pyqtSignal(str)
-    def __init__(self,tmp_path):
-        super().__init__()
-        self.tmp_path=tmp_path
+    proc = pyqtSignal(str)
 
-    def ChangePath(self,tmp_path):
-        self.tmp_path=tmp_path
+    def __init__(self, tmp_path):
+        super().__init__()
+        self.tmp_path = tmp_path
+
+    def ChangePath(self, tmp_path):
+        self.tmp_path = tmp_path
 
     def run(self):
-        s=self.WaitForNotValidFile()
+        s = self.WaitForNotValidFile()
         self.chan.emit(s)  # 计算结果完成后，发送结果
 
     def WaitForNotValidFile(self):
@@ -231,13 +234,14 @@ class DetectTheard(QThread):
         while True:
             self.proc.emit(f"布眼科技智能AI实时监测系统")
             files = os.listdir(self.tmp_path)
-            for file in files :
-                if file in cache:continue
+            for file in files:
+                if file in cache:
+                    continue
                 self.proc.emit(f"布眼科技智能AI实时监测系统 正在处理{file}")
                 if '_r' in file or '_a' in file:
                     if not check(os.path.join(self.tmp_path, file)):
                         self.bad_files = [file, file.replace('_r', '_a'), file.replace('_r', '_i'), file.replace('_r', ''),
-                                     file.replace('_r', '').replace('.csv', '.dat')]
+                                          file.replace('_r', '').replace('.csv', '.dat')]
                         return file
                 cache.add(file)
             time.sleep(1)
@@ -248,26 +252,24 @@ class DetectTheard(QThread):
         return
 
 
-
 def check(p):
     with open(p, encoding='utf-8') as f:
         col = np.loadtxt(f, str, delimiter=",", usecols=(1))
-        data = np.array(col[29:],dtype=float)
+        data = np.array(col[29:], dtype=float)
         if float(max(data)) < 0.1 or not denoise(data):
             return False
     return True
 
 
-
-def move(tmp_path,rootPath, device_id, name, date, location, fabric, waving_type):
+def move(tmp_path, rootPath, device_id, name, date, location, fabric, waving_type):
     b = f"{device_id}_{fabric}_{waving_type}_{name}_{date}_{location}"
-    despath = os.path.join(rootPath,b)
+    despath = os.path.join(rootPath, b)
     if not os.path.exists(rootPath):
         os.mkdir(rootPath)
     os.mkdir(despath)
     currentList = os.listdir(tmp_path)
     for file in currentList:
-        shutil.move(os.path.join(tmp_path,file),despath)
+        shutil.move(os.path.join(tmp_path, file), despath)
 
 
 if __name__ == "__main__":
@@ -277,14 +279,3 @@ if __name__ == "__main__":
     m.show()
     m.resize(800, 500)
     app.exec()
-
-
-
-
-
-
-
-
-
-
-
