@@ -58,7 +58,7 @@
 四、从源码编译(可选)
 
 1. 配置环境
-
+   `git clone git@github.com:FeatTeam/nir_tools.git ; cd nir_tools`
    `pip install virtualenv; virtualenv py37; .\py37\Scripts\activate;pip install -r env.txt `
 
 2. 运行软件
