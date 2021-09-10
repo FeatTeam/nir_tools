@@ -309,7 +309,10 @@ class Main(QMainWindow):
             event.ignore()
 
     def checkValid(self):
-        comp, isLegal = get_components(self.fabric.split("_")[-1])
+        seg = self.fabric.split("_")
+        if len(seg) != 5:
+            return False
+        comp, isLegal = get_components(seg[-1])
         if not isLegal:
             return False
         return True
