@@ -125,7 +125,10 @@ class Main(QMainWindow):
         self.btn_start_detect.setStyleSheet("QpushButton{background:white}")
         self.btn_finish_detect.clicked.connect(self.Move)
         self.detect_thread = DetectTheard("undefined path", self.batch_size)
-
+        self.detect_thread.chan.connect(self.Alert)
+        self.detect_thread.proc.connect(self.ShowProc)
+        self.detect_thread.finished_num.connect(self.ShowFinished)
+        
     def init_from_config(self):
         self.tmp_path = Config.tmp_path
         self.rootPath = Config.rootPath
@@ -182,9 +185,7 @@ class Main(QMainWindow):
         self.DestroyDetectThread()
         self.btn_start_detect.setStyleSheet('''QPushButton{background:red;}''')
         self.detect_thread.setConfig(self.tmp_path, self.batch_size)
-        self.detect_thread.chan.connect(self.Alert)
-        self.detect_thread.proc.connect(self.ShowProc)
-        self.detect_thread.finished_num.connect(self.ShowFinished)
+
         self.detect_thread.start()
 
     def ShowFinished(self, finished_num):
@@ -321,7 +322,7 @@ class Main(QMainWindow):
 class DetectTheard(QThread):
     chan = pyqtSignal(str)  # 损坏文件名
     proc = pyqtSignal(str)  # 处理进度,windowTitle
-    finished_num = pyqtSignal(int)  # 已检测数量
+    finished_num = pyqtSignal(str)  # 已检测数量
 
     def __init__(self, tmp_path, batch_size):
         super().__init__()
@@ -343,7 +344,7 @@ class DetectTheard(QThread):
             self.proc.emit(f"布眼科技智能AI实时监测系统")
             # 检测文件数量达标
             if len(cache) >= 4*self.batch_size:
-                self.finished_num.emit(len(cache))
+                self.finished_num.emit(str(len(cache)))
                 return
 
             files = os.listdir(self.tmp_path)
