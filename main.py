@@ -128,7 +128,7 @@ class Main(QMainWindow):
         self.detect_thread.chan.connect(self.Alert)
         self.detect_thread.proc.connect(self.ShowProc)
         self.detect_thread.finished_num.connect(self.ShowFinished)
-        
+
     def init_from_config(self):
         self.tmp_path = Config.tmp_path
         self.rootPath = Config.rootPath
@@ -219,11 +219,14 @@ class Main(QMainWindow):
         else:
             pass
 
+    def make_despath(self):
+        return make_despath(self.rootPath, self.device_id, self.name,
+                            self.date, self.location, self.fabric, self.waving_type)
+
 # return if continue to Test()
     def Move(self):
         self.save_config()
-        despath = make_despath(self.rootPath, self.device_id, self.name,
-                               self.date, self.location, self.fabric, self.waving_type)
+        despath, _ = self.make_despath()
 
         if os.path.exists(despath):
             reply = QMessageBox.warning(self,
@@ -290,7 +293,7 @@ class Main(QMainWindow):
                                         f"采样次数不存在！",
                                         )
             return
-        if not self.checkValid():
+        if not self.isValidConfig():
             reply = QMessageBox.warning(self,
                                         "ERROR",
                                         f"配置不符合规范",
@@ -309,12 +312,15 @@ class Main(QMainWindow):
         else:
             event.ignore()
 
-    def checkValid(self):
+    def isValidConfig(self):
         seg = self.fabric.split("_")
         if len(seg) != 5:
             return False
         comp, isLegal = get_components(seg[-1])
         if not isLegal:
+            return False
+        _, dirname = self.make_despath()
+        if len(dirname.split("_")) != 10:
             return False
         return True
 
@@ -380,8 +386,8 @@ def check(p):
 
 
 def make_despath(rootPath, device_id, name, date, location, fabric, waving_type):
-    b = f"{device_id}_{fabric}_{waving_type}_{name}_{date}_{location}"
-    return os.path.join(rootPath, b)
+    dirname = f"{device_id}_{fabric}_{waving_type}_{name}_{date}_{location}"
+    return os.path.join(rootPath, dirname), dirname
 
 
 def move(tmp_path, rootPath, despath):
