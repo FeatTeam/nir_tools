@@ -1,5 +1,6 @@
 import re
 import sys
+from decimal import Decimal
 from PyQt5.Qt import *
 import config as Config
 import os
@@ -163,17 +164,21 @@ class Main(QMainWindow):
 
     def Test(self):
         self.save_config()
+        despath, _ = self.make_despath()
         # if running, terminate background task
         if self.detect_thread.isRunning():
             self.DestroyDetectThread()
             return
 
         # if not running, start background task
-        if not os.path.exists(self.tmp_path):
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"采集数据临时地址不存在！",
-                                        )
+        if os.path.exists(despath):
+            reply = QMessageBox.warning(
+                self, "ERROR", "目标地址地址已存在！可能是布样号重复,是否继续归档?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if reply != QMessageBox.Yes:
+                return
+        err_msg = self.detectConfigErr()
+        if err_msg:
+            QMessageBox.warning(self, "ERROR", err_msg)
             return
         self.RunDetectThread()
 
@@ -223,81 +228,50 @@ class Main(QMainWindow):
         return make_despath(self.rootPath, self.device_id, self.name,
                             self.date, self.location, self.fabric, self.waving_type)
 
-# return if continue to Test()
-    def Move(self):
+    # return err_msg,can_ignore
+    def detectConfigErr(self):
         self.save_config()
-        despath, _ = self.make_despath()
-
-        if os.path.exists(despath):
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"目标地址地址已存在！可能是布样号重复,是否继续归档?",
-                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes
-                                        )
-            if reply == QMessageBox.Yes:
-                pass
-            else:
-                return
+        despath, dirname = self.make_despath()
 
         if not os.path.exists(self.rootPath):
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"采样数据存放地址不存在！",
-                                        )
-            return
+            return "采样数据存放地址不存在！"
         if not self.device_id:
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"采集设备编号不存在！",
-                                        )
-            return
+            return "采集设备编号不存在！"
         if not self.name:
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"采集员姓名不存在！",
-                                        )
-            return
+            return "采集员姓名不存在！"
         if not self.date:
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"采集日期不存在！",
-                                        )
-            return
+            return "采集日期不存在！"
         if not self.location:
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"采集地点不存在！",
-                                        )
-            return
+            return "采集地点不存在！"
         if not self.device_id:
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"采集设备编号不存在！",
-                                        )
-            return
+            return "采集设备编号不存在！"
         if not self.fabric:
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"布匹成分不存在！",
-                                        )
-            return
+            return "布匹成分不存在！"
         if not self.waving_type:
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"布匹编号不存在！",
-                                        )
-            return
+            return "编织方式不存在！"
         if not self.batch_size:
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"采样次数不存在！",
-                                        )
-            return
+            return "采样次数不存在！"
+        comp_err = self.checkCompErr()
+        if comp_err:
+            return comp_err
+        if len(dirname.split("_")) != 10:
+            return "组合的文件夹名未能以_分为10组"
+        return None
+
+    def checkCompErr(self):
+        seg = self.fabric.split("_")
+        if len(seg) != 5:
+            return "布匹编号成分 未以_分为5组"
+        comp, isLegal, total = get_components(seg[-1])
+        if not isLegal:
+            return f'布匹成分之和非100,而是{total}'
+        return None
+
+# return if continue to Test()
+
+    def Move(self):
+        despath, _ = self.make_despath()
         if not self.isValidConfig():
-            reply = QMessageBox.warning(self,
-                                        "ERROR",
-                                        f"配置不符合规范",
-                                        )
             return
         move(self.tmp_path, self.rootPath, despath)
         return True
@@ -311,18 +285,6 @@ class Main(QMainWindow):
             event.accept()
         else:
             event.ignore()
-
-    def isValidConfig(self):
-        seg = self.fabric.split("_")
-        if len(seg) != 5:
-            return False
-        comp, isLegal = get_components(seg[-1])
-        if not isLegal:
-            return False
-        _, dirname = self.make_despath()
-        if len(dirname.split("_")) != 10:
-            return False
-        return True
 
 
 class DetectTheard(QThread):
@@ -407,7 +369,7 @@ def move(tmp_path, rootPath, despath):
 
 def get_components(seg):
     pattern = re.compile(r'([a-zA-Z]+[(\-|\+)?\d+(\.\d+)?]+)')  # 查找数字
-    total = 0
+    total = Decimal('0')
     components = pattern.findall(seg)
     dict = {}
     for i in range(len(components)):
@@ -420,9 +382,9 @@ def get_components(seg):
 
     components = sorted(dict.items(), key=lambda k: float(k[1]), reverse=True)
     for k, v in components:
-        total += float(v)
-    isLegal = True if total == 100 else False
-    return components, isLegal
+        total += Decimal(v)
+    isLegal = True if total == Decimal('100') else False
+    return components, isLegal, total
 
 
 if __name__ == "__main__":
