@@ -164,18 +164,13 @@ class Main(QMainWindow):
 
     def Test(self):
         self.save_config()
-        despath, _ = self.make_despath()
+
         # if running, terminate background task
         if self.detect_thread.isRunning():
             self.DestroyDetectThread()
             return
 
         # if not running, start background task
-        if os.path.exists(despath):
-            reply = QMessageBox.warning(
-                self, "ERROR", "目标地址地址已存在！可能是布样号重复,是否继续归档?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
-            if reply != QMessageBox.Yes:
-                return
         err_msg = self.detectConfigErr()
         if err_msg:
             QMessageBox.warning(self, "ERROR", err_msg)
@@ -225,6 +220,7 @@ class Main(QMainWindow):
             pass
 
     def make_despath(self):
+        self.save_config()
         return make_despath(self.rootPath, self.device_id, self.name,
                             self.date, self.location, self.fabric, self.waving_type)
 
@@ -270,9 +266,17 @@ class Main(QMainWindow):
 # return if continue to Test()
 
     def Move(self):
+
         despath, _ = self.make_despath()
-        if not self.isValidConfig():
-            return
+        err_msg = self.detectConfigErr()
+        if err_msg:
+            QMessageBox.warning(self, "ERROR", err_msg)
+            return False
+        if os.path.exists(despath):
+            reply = QMessageBox.warning(
+                self, "ERROR", "目标地址地址已存在！可能是布样号重复,是否继续归档?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if reply != QMessageBox.Yes:
+                return False
         move(self.tmp_path, self.rootPath, despath)
         return True
 
