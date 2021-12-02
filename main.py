@@ -2,7 +2,7 @@ import re
 import sys
 from decimal import Decimal
 from PyQt5.Qt import *
-import config as Config
+import configparser
 import os
 import time
 import pandas as pd
@@ -13,6 +13,9 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from denoise import denoise
+
+config = configparser.ConfigParser()
+conf = config.read("config.ini", encoding="utf-8")
 
 
 class Main(QMainWindow):
@@ -35,7 +38,7 @@ class Main(QMainWindow):
         self.label_temp_addr.resize(150, 30)
 
         self.input_relocate_dir = QLineEdit(self)
-        self.input_relocate_dir.setText(self.rootPath)
+        self.input_relocate_dir.setText(self.root_path)
         self.input_relocate_dir.move(170, 100)
         self.input_relocate_dir.resize(450, 30)
 
@@ -131,19 +134,12 @@ class Main(QMainWindow):
         self.detect_thread.finished_num.connect(self.ShowFinished)
 
     def init_from_config(self):
-        self.tmp_path = Config.tmp_path
-        self.rootPath = Config.rootPath
-        self.device_id = Config.device_id
-        self.name = Config.name
-        self.date = Config.date
-        self.location = Config.location
-        self.fabric = Config.fabric
-        self.waving_type = Config.waving_type
-        self.batch_size = int(Config.batch_size)
+        self.__dict__.update(dict(config.items('ini')))
+        self.batch_size = int(self.batch_size)
 
     def save_config(self):
         self.tmp_path = self.input_temp_addr.text()
-        self.rootPath = self.input_relocate_dir.text()
+        self.root_path = self.input_relocate_dir.text()
         self.device_id = self.input_device_id.text()
         self.name = self.input_collector_name.text()
         self.date = self.input_collect_date.text()
@@ -151,16 +147,11 @@ class Main(QMainWindow):
         self.fabric = self.input_fabric.text()
         self.waving_type = self.input_waving_type.text()
         self.batch_size = int(self.input_batch_size.text())
-        with open("config.py", "w", encoding='utf-8') as f:
-            f.write(f"tmp_path='{self.tmp_path }'\n")
-            f.write(f"rootPath='{self.rootPath }'\n")
-            f.write(f"device_id='{self.device_id }'\n")
-            f.write(f"name='{self.name}'\n")
-            f.write(f"date='{self.date}'\n")
-            f.write(f"location='{self.location }'\n")
-            f.write(f"fabric='{self.fabric}'\n")
-            f.write(f"waving_type='{self.waving_type}'\n")
-            f.write(f"batch_size='{self.batch_size}'\n")
+        for k, v in self.__dict__.items():
+            if k not in config['ini']:
+                continue
+            config['ini'][k] = str(v)
+        config.write(open('config.ini', 'w', encoding='utf-8'))
 
     def Test(self):
         self.save_config()
@@ -221,7 +212,7 @@ class Main(QMainWindow):
 
     def make_despath(self):
         self.save_config()
-        return make_despath(self.rootPath, self.device_id, self.name,
+        return make_despath(self.root_path, self.device_id, self.name,
                             self.date, self.location, self.fabric, self.waving_type)
 
     # return err_msg,can_ignore
@@ -229,7 +220,7 @@ class Main(QMainWindow):
         self.save_config()
         despath, dirname = self.make_despath()
 
-        if not os.path.exists(self.rootPath):
+        if not os.path.exists(self.root_path):
             return "采样数据存放地址不存在！"
         if not self.device_id:
             return "采集设备编号不存在！"
@@ -277,7 +268,7 @@ class Main(QMainWindow):
                 self, "ERROR", "目标地址地址已存在！可能是布样号重复,是否继续归档?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
             if reply != QMessageBox.Yes:
                 return False
-        move(self.tmp_path, self.rootPath, despath)
+        move(self.tmp_path, self.root_path, despath)
         return True
 
     def closeEvent(self, event):
@@ -351,15 +342,15 @@ def check(p):
     return True
 
 
-def make_despath(rootPath, device_id, name, date, location, fabric, waving_type):
+def make_despath(root_path, device_id, name, date, location, fabric, waving_type):
     dirname = f"{device_id}_{fabric}_{waving_type}_{name}_{date}_{location}"
-    return os.path.join(rootPath, dirname), dirname
+    return os.path.join(root_path, dirname), dirname
 
 
-def move(tmp_path, rootPath, despath):
+def move(tmp_path, root_path, despath):
 
-    if not os.path.exists(rootPath):
-        os.mkdir(rootPath)
+    if not os.path.exists(root_path):
+        os.mkdir(root_path)
     if not os.path.exists(despath):
         os.mkdir(despath)
     currentList = os.listdir(tmp_path)
