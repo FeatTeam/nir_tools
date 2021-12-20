@@ -1,9 +1,11 @@
+import cgitb
 import re
 import sys
 from decimal import Decimal
 from PyQt5.Qt import *
 import configparser
 import os
+import traceback
 import time
 import pandas as pd
 import shutil
@@ -22,7 +24,8 @@ class Main(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
         self.init_from_config()
-        self.setWindowTitle(f"布眼科技智能AI实时监测系统")
+        self.setWindowTitle(
+            f"布眼科技智能AI实时监测系统v{QApplication.applicationVersion()}")
         self.setWindowIcon(QIcon("nir_tools.ico"))
         self.widget = QWidget(self)
         self.layout = QVBoxLayout(self.widget)
@@ -176,7 +179,6 @@ class Main(QMainWindow):
         self.DestroyDetectThread()
         self.btn_start_detect.setStyleSheet('''QPushButton{background:red;}''')
         self.detect_thread.setConfig(self.tmp_path, self.batch_size)
-
         self.detect_thread.start()
 
     def ShowFinished(self, finished_num):
@@ -383,9 +385,16 @@ def get_components(seg):
 
 
 if __name__ == "__main__":
+    log_dir = os.path.join(os.getcwd(), '日志')
+    if not os.path.exists(log_dir):
+        os.mkdir(log_dir)
+    cgitb.enable(format='text', logdir=log_dir)
+
     QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    QApplication.setApplicationName('布眼科技智能AI实时监测系统')
+    QApplication.setApplicationVersion('21.1211')
     app = QApplication([])
     m = Main()
     m.show()
     m.resize(800, 500)
-    app.exec()
+    sys.exit(app.exec())

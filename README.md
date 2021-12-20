@@ -67,4 +67,5 @@
 
 3. 打包二进制文件
 
-   `pyinstaller  main.py -D -i nir_tools.ico -n nir_tools  -w -y --clean`
+   ~~`pyinstaller  main.py -D -i nir_tools.ico -n nir_tools  -w -y --clean`~~
+   `pyinstaller –noconfirm main.spec`
